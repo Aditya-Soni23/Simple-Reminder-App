@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Reminder App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .reminder-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+            margin-bottom: 20px;
+        }
+
+        .add-reminder-btn {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        #current-time {
+            font-size: 1.2em;
+            margin-top: 20px;
+            color: yellow;
+            font-weight: bold;
+        }
+
+        #reminderModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        #reminderModal button {
+            margin: 15px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        #reminderModal button:hover {
+            background-color: #ddd;
+        }
+
+        #snoozeModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        #snoozeModal input {
+            margin: 15px;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        #snoozeModal button {
+            margin: 15px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        #snoozeModal button:hover {
+            background-color: #ddd;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="current-time"></div>
+
+    <div id="reminderForm" class="reminder-container">
+        <h1 style="color: #333;">Simple Reminder App</h1>
+        <label for="reminderTitle">Reminder Title:</label>
+        <input type="text" id="reminderTitle" placeholder="Enter Reminder Name" required>
+
+        <label for="reminderDate">Date:</label>
+        <input type="date" id="reminderDate" required>
+
+        <label for="reminderTime">Time:</label>
+        <input type="time" id="reminderTime" required>
+
+        <label for="soundSelection">Select Sound:</label>
+        <select id="soundSelection">
+            <option value="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">Harsh Alarm</option>
+            <option value="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg">Boing (Melodious)</option>
+            <option value="https://actions.google.com/sounds/v1/foley/swoosh.ogg">Swoosh (Melodious)</option>
+        </select>
+
+        <button onclick="testSelectedAudio()">Test Audio</button>
+
+        <button onclick="setReminder()">Set Reminder</button>
+    </div>
+
+    <div id="reminderModal">
+        <p id="reminderModalText"></p>
+        <button onclick="snoozeReminderPopup()">Snooze</button>
+        <button onclick="dismissReminder()">Dismiss</button>
+    </div>
+
+    <div id="snoozeModal">
+        <p>Choose snooze duration (in minutes):</p>
+        <input type="number" id="snoozeDuration" min="1" value="5">
+        <button onclick="snoozeReminder()">Snooze</button>
+    </div>
+
+    <script>
+        function setReminder() {
+            const reminderTitle = document.getElementById('reminderTitle').value || 'Unnamed Reminder';
+            const reminderDate = document.getElementById('reminderDate').value;
+            const reminderTime = document.getElementById('reminderTime').value;
+            const selectedSound = document.getElementById('soundSelection').value;
+
+            const reminderDateTime = new Date(`${reminderDate}T${reminderTime}`);
+            const currentTime = new Date();
+
+            if (reminderDateTime > currentTime) {
+                const timeUntilReminder = reminderDateTime - currentTime;
+
+                setTimeout(() => {
+                    showReminderModal(reminderTitle, selectedSound);
+                    playNotificationSound(selectedSound);
+                }, timeUntilReminder);
+
+                playNotificationSound('https://actions.google.com/sounds/v1/notifications/simple_beep_short.ogg');
+                alert(`Reminder set!\nTitle: ${reminderTitle}\nTime: ${reminderDateTime.toLocaleString()}`);
+            } else {
+                alert('Please set a reminder time in the future.');
+            }
+        }
+
+        function testSelectedAudio() {
+            const selectedSound = document.getElementById('soundSelection').value;
+            playNotificationSound(selectedSound);
+        }
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+
+            document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function showReminderModal(title, sound) {
+            const reminderModal = document.getElementById('reminderModal');
+            const reminderModalText = document.getElementById('reminderModalText');
+            reminderModalText.textContent = `Reminder: ${title}`;
+            reminderModal.style.display = 'block';
+        }
+
+        function snoozeReminderPopup() {
+            const snoozeModal = document.getElementById('snoozeModal');
+            snoozeModal.style.display = 'block';
+        }
+
+        function dismissReminder() {
+            const reminderModal = document.getElementById('reminderModal');
+            reminderModal.style.display = 'none';
+        }
+
+        function snoozeReminder() {
+            const snoozeDuration = document.getElementById('snoozeDuration').value;
+            const reminderModal = document.getElementById('reminderModal');
+            const snoozeModal = document.getElementById('snoozeModal');
+
+            setTimeout(() => {
+                reminderModal.style.display = 'block';
+            }, snoozeDuration * 60 * 1000);
+
+            snoozeModal.style.display = 'none';
+        }
+
+        function playNotificationSound(url) {
+            const audio = new Audio(url);
+            audio.play();
+        }
+
+        // Update current time every second
+        setInterval(updateCurrentTime, 1000);
+
+    </script>
+</body>
+
+</html>
